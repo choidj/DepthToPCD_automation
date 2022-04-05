@@ -9,6 +9,11 @@
 #define MAX_BLOCK_NUM 512
 #define BLOCK_SIZE 16
 
+// image size.
+#define HEIGHT 640
+#define WIDTH 480
+#define CHANNEL 3
+
 
 using namespace std;
 using namespace cv;
@@ -29,7 +34,7 @@ namespace cud {
     }
 }
 
-cudaError_t automation_cuda(double** dst, unsigned char** src);
+cudaError_t img_automation_cuda(double** dst, unsigned char** src);
 cudaError_t img_num_compare_call(bool* dst, unsigned char* src, int size, int compare_num);
 
 
