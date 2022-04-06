@@ -20,7 +20,10 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="img_op.cu">
+    <CudaCompile Include="img_kernel_call.cu">
+      <Filter>소스 파일</Filter>
+    </CudaCompile>
+    <CudaCompile Include="img_kernel_op.cu">
       <Filter>소스 파일</Filter>
     </CudaCompile>
   </ItemGroup>

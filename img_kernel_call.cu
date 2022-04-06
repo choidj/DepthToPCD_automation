@@ -1,5 +1,4 @@
-#include "img_op.cuh"
-
+#include "img_op_cuda.cuh"
 
 
 
@@ -44,7 +43,7 @@ cudaError_t img_num_compare_call(bool* dst, unsigned char* src, int size, int co
     }
 
     // Launch a kernel on the GPU with one thread for each element.
-    cud::compare_bool<< <grid, block >> > (dev_dst, dev_src, compare_num);
+    compare_bool<< <grid, block >> > (dev_dst, dev_src, compare_num);
 
     // Check for any errors launching the kernel
     cudaStatus = cudaGetLastError();
@@ -76,13 +75,16 @@ Error:
 }
 
 cudaError_t img_automation_cuda(double** dst, unsigned char** src) {
+    cudaError_t cudaStatus;
     int pixel_size = HEIGHT * WIDTH * CHANNEL;
 
     unsigned char* src_buffer = (unsigned char*)malloc(pixel_size * sizeof(unsigned char));
     bool* dst_buffer = (bool*)malloc(pixel_size * sizeof(bool));
 
-
+    cudaStatus = img_num_compare_call(dst_buffer, *(src + 2), pixel_size, 10);
 
     free(src_buffer);
     free(dst_buffer);
+
+    return cudaStatus;
 }

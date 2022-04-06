@@ -1,4 +1,4 @@
-#include "img_op.cuh"
+#include "img_op_cuda.cuh"
 
 
 int main() {
@@ -9,8 +9,14 @@ int main() {
 	size_t material_size = sizeof(img_names) / sizeof(string);
 	Mat* src_imgs = new Mat[material_size];
 
-	unsigned char* src_buffer = (unsigned char*)malloc(pixel_size * sizeof(unsigned char));
-	double** dst_buffer;
+	unsigned char** src_buffer;
+	src_buffer = (unsigned char**)malloc(material_size * sizeof(unsigned char*));
+	*(src_buffer) = (unsigned char*)malloc(material_size * pixel_size * sizeof(unsigned char));
+	for (int i = 1; i < material_size; i++) {
+		*(src_buffer + i) = *(src_buffer + i - 1) + pixel_size;
+	}
+
+	double** dst_buffer = 0;
 	int cur_idx = 0;
 
 	// allocate image Mats.
@@ -22,7 +28,10 @@ int main() {
 		src_imgs[i] = imread(path + temp_name);
 	}
 
-	memcpy(src_buffer, src_imgs[2].data, pixel_size * sizeof(unsigned char));
+
+	for (int i = 0; i < material_size; i++) {
+		memcpy(*(src_buffer + i), (src_imgs + i)->data, pixel_size * sizeof(unsigned char));
+	}
 	
 	cudaError_t cudaStatus = img_automation_cuda(dst_buffer, src_buffer);
 
@@ -34,7 +43,8 @@ int main() {
 
 	waitKey(50000);
 
-
+	free(*src_buffer);
+	free(src_buffer);
 
 	return 0;
 }
