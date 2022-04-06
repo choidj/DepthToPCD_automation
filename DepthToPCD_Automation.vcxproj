@@ -159,7 +159,7 @@
     <CudaCompile Include="img_kernel_op.cu" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="img_op.cuh" />
+    <ClInclude Include="img_op_cuda.cuh" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

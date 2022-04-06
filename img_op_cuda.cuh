@@ -19,6 +19,7 @@ using namespace std;
 using namespace cv;
 
 __global__ void compare_bool(bool* dst, const unsigned char* src, const int compare_num);
+
 cudaError_t img_automation_cuda(double** dst, unsigned char** src);
 cudaError_t img_num_compare_call(bool* dst, unsigned char* src, int size, int compare_num);
 

@@ -28,7 +28,7 @@
     </CudaCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="img_op.cuh">
+    <ClInclude Include="img_op_cuda.cuh">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
