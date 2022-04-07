@@ -11,13 +11,13 @@ int main() {
 
 	//---------------------------------------------------------------------------------------
 	// img mat allocation. 2-Dim. * is images (e.g., depth, rgb, mask), ** is image's pixels.
-	unsigned char** src_buffer;
-	src_buffer = (unsigned char**)malloc(material_size * sizeof(unsigned char*));
-	*(src_buffer) = (unsigned char*)malloc(material_size * pixel_size * sizeof(unsigned char));
+	unsigned char** images;
+	images = (unsigned char**)malloc(material_size * sizeof(unsigned char*));
+	*(images) = (unsigned char*)malloc(material_size * pixel_size * sizeof(unsigned char));
 	// check if malloc is failed...
-	if (src_buffer == NULL) { printf("src_buffer is falied to allocation.\n"); return -1; }
+	if (images == NULL) { printf("src_buffer is falied to allocation.\n"); return -1; }
 	for (int i = 1; i < material_size; i++) {
-		*(src_buffer + i) = *(src_buffer + i - 1) + pixel_size;
+		*(images + i) = *(images + i - 1) + pixel_size;
 	}
 	//----------------------------------------------------------------------------------------
 	double** dst_buffer = 0;
@@ -34,11 +34,11 @@ int main() {
 
 	// opencv Mat convert into usigned char..-------------------------------------------------
 	for (int i = 0; i < material_size; i++) {
-		memcpy(*(src_buffer + i), (src_imgs + i)->data, pixel_size * sizeof(unsigned char));
+		memcpy(*(images + i), (src_imgs + i)->data, pixel_size * sizeof(unsigned char));
 	}
 
 	// automation start...--------------------------------------------------------------------
-	cudaError_t cudaStatus = trans_automation_cuda(dst_buffer, src_buffer);
+	cudaError_t cudaStatus = trans_automation_cuda(dst_buffer, images);
 
 	imshow("befo", *(src_imgs + 2));
 	//imshow("Depth", src_imgs[0]);
@@ -47,9 +47,11 @@ int main() {
 
 	waitKey(50000);
 
+
 	// img mat deallocation.
-	free(*src_buffer);
-	free(src_buffer);
+	free(*images);
+	free(images);
+	delete(src_imgs);
 
 	return 0;
 }

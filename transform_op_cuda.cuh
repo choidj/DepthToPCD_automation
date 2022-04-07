@@ -5,7 +5,7 @@
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
-#define DEBUG 1
+#define DEBUG 0
 #define MAX_BLOCK_NUM 512
 #define BLOCK_SIZE 16
 

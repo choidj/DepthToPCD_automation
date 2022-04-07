@@ -7,11 +7,18 @@ cudaError_t img_op_kernel_call(double* z, unsigned char* depth_img, unsigned cha
     double far = 5; double near = 0.3; float mask_threshold = 10;
 
     int size = HEIGHT * WIDTH;
+
     cudaError_t cudaStatus;
 
     int img_grid1D = ceil((float)size / (float)MAX_BLOCK_NUM);
 
     dim3 grid(img_grid1D, 1, 1); dim3 block(MAX_BLOCK_NUM, 1, 1);
+
+#if DEBUG
+    for (int i = 0; i < 30; i++) {
+        printf("[i : %d] depth src : %d, mask src : %d\n", i, *(depth_img +i * 2000), *(mask_img + i * 2000));
+    }
+#endif
 
     // Choose which GPU to run on, change this on a multi-GPU system.
     cudaStatus = cudaSetDevice(0);
@@ -46,7 +53,7 @@ cudaError_t img_op_kernel_call(double* z, unsigned char* depth_img, unsigned cha
         goto Error;
     }
 
-    cudaStatus = cudaMemcpy(dev_depth_img, depth_img, size * sizeof(unsigned char), cudaMemcpyHostToDevice);
+    cudaStatus = cudaMemcpy(dev_mask_img, mask_img, size * sizeof(unsigned char), cudaMemcpyHostToDevice);
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaMemcpy failed dev_mask_img!");
         goto Error;
@@ -98,19 +105,21 @@ cudaError_t trans_automation_cuda(double** dst, unsigned char** src) {
 
     double* z = (double*)malloc(HEIGHT * WIDTH * sizeof(double));
 
+#if DEBUG
+    for (int i = 0; i < 30; i++) {
+        printf("[i : %d] depth src : %d, rgb src : %d, mask src : %d\n", i, *(*(src) + i * 2000), *(*(src + 1) + i * 2000), *(*(src + 2) + i * 2000));
+    }
+#endif
 
 
     // image operation kernel call  matlab :-- pts = zeros(height*width, 3) color = uint8(zeros(height * width, 3))--
-    cudaStatus = img_op_kernel_call(z, *(src + 1), *(src + 2));
+    cudaStatus = img_op_kernel_call(z, *(src), *(src + 2));
 
-    //point operation kernel call
+    //point operation kernel call here..
 
 
 
     std::free(z);
-    for (int i = 0; i < 3; i++)
-        delete(inverse_k[i]);
-    delete(inverse_k);
 
     return cudaStatus;
 }
