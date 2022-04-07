@@ -155,11 +155,11 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="img_kernel_call.cu" />
-    <CudaCompile Include="img_kernel_op.cu" />
+    <CudaCompile Include="transform_op_kerenl_call.cu" />
+    <CudaCompile Include="transform_op_kernel.cu" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="img_op_cuda.cuh" />
+    <ClInclude Include="transform_op_cuda.cuh" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

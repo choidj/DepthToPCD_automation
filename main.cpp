@@ -1,4 +1,4 @@
-#include "img_op_cuda.cuh"
+#include "transform_op_cuda.cuh"
 
 
 int main() {
@@ -15,7 +15,7 @@ int main() {
 	src_buffer = (unsigned char**)malloc(material_size * sizeof(unsigned char*));
 	*(src_buffer) = (unsigned char*)malloc(material_size * pixel_size * sizeof(unsigned char));
 	// check if malloc is failed...
-	if (src_buffer == NULL) printf("src_buffer is falied to allocation.\n"); return -1;
+	if (src_buffer == NULL) { printf("src_buffer is falied to allocation.\n"); return -1; }
 	for (int i = 1; i < material_size; i++) {
 		*(src_buffer + i) = *(src_buffer + i - 1) + pixel_size;
 	}
@@ -38,7 +38,7 @@ int main() {
 	}
 
 	// automation start...--------------------------------------------------------------------
-	cudaError_t cudaStatus = img_automation_cuda(dst_buffer, src_buffer);
+	cudaError_t cudaStatus = trans_automation_cuda(dst_buffer, src_buffer);
 
 	imshow("befo", *(src_imgs + 2));
 	//imshow("Depth", src_imgs[0]);

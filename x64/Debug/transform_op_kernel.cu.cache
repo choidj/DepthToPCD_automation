@@ -1,4 +1,4 @@
-Identity=img_kernel_call.cu
+Identity=transform_op_kernel.cu
 AdditionalCompilerOptions=
 AdditionalCompilerOptions=
 AdditionalDependencies=
@@ -8,7 +8,7 @@ AdditionalOptions=
 AdditionalOptions=
 CodeGeneration=compute_52,sm_52
 CodeGeneration=compute_52,sm_52
-CompileOut=C:\Users\DJChoi\source\repos\DepthToPCD_Automation\DepthToPCD_Automation\x64\Debug\img_kernel_call.cu.obj
+CompileOut=C:\Users\DJChoi\source\repos\DepthToPCD_Automation\DepthToPCD_Automation\x64\Debug\transform_op_kernel.cu.obj
 CudaRuntime=Static
 CudaToolkitCustomDir=
 DebugInformationFormat=ProgramDatabase
