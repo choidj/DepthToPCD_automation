@@ -15,12 +15,26 @@ int main() {
 	images = (unsigned char**)malloc(material_size * sizeof(unsigned char*));
 	*(images) = (unsigned char*)malloc(material_size * pixel_size * sizeof(unsigned char));
 	// check if malloc is failed...
-	if (images == NULL) { printf("src_buffer is falied to allocation.\n"); return -1; }
+	if (images == NULL) { printf("images is falied to allocation.\n"); return -1; }
 	for (int i = 1; i < material_size; i++) {
 		*(images + i) = *(images + i - 1) + pixel_size;
 	}
 	//----------------------------------------------------------------------------------------
-	double** dst_buffer = 0;
+	// dst_points, dst_point_color allocation...
+	double** dst_points;
+	unsigned char** dst_points_color;
+	dst_points = (double**)malloc(3 * sizeof(double*));
+	*(dst_points) = (double*)malloc(pixel_size * sizeof(double));
+
+	dst_points_color = (unsigned char**)malloc(3 * sizeof(unsigned char*));
+	*(dst_points_color) = (unsigned char*)malloc(pixel_size * sizeof(unsigned char));
+
+	if (dst_points == NULL || dst_points_color == NULL) { printf("dst is falied to allocation.\n"); return -1; }
+	for (int i = 1; i < 3; i++) {
+		*(dst_points_color + i) = *(dst_points_color + i - 1) + HEIGHT * WIDTH;
+		*(dst_points + i) = *(dst_points + i - 1) + HEIGHT * WIDTH;
+	}
+	//----------------------------------------------------------------------------------------
 	int cur_idx = 0;
 
 	// allocate image Mats and read opencv imread..-------------------------------------------
@@ -38,7 +52,7 @@ int main() {
 	}
 
 	// automation start...--------------------------------------------------------------------
-	cudaError_t cudaStatus = trans_automation_cuda(dst_buffer, images);
+	trans_automation_cuda(dst_points, dst_points_color, images);
 
 	imshow("befo", *(src_imgs + 2));
 	//imshow("Depth", src_imgs[0]);
@@ -49,8 +63,9 @@ int main() {
 
 
 	// img mat deallocation.
-	free(*images);
-	free(images);
+	free(*images); 				free(images);
+	free(*dst_points);			free(dst_points);
+	free(*dst_points_color);	free(dst_points_color);
 	delete(src_imgs);
 
 	return 0;
