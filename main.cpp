@@ -9,7 +9,7 @@ int main() {
 	clock_t start, end;
 	size_t material_size = sizeof(img_names) / sizeof(string);
 	Mat* src_imgs = new Mat[material_size];
-	PointCloud <PointXYZRGB> point_cloud;
+	PointCloud <PointXYZRGB_double> point_cloud;
 	//pcl::visualization::CloudViewer viewer("Check Cloud Viewer");
 
 	//---------------------------------------------------------------------------------------
@@ -75,9 +75,10 @@ int main() {
 		if (*(*(dst_points + i)) == NULL)
 			continue;
 		// x y z setting,,,
-		PointXYZRGB point = { (float)*(*(dst_points + i)),
-		(float)*(*(dst_points + i) + 1),
-		(float)*(*(dst_points + i) + 2) };
+		PointXYZRGB_double point; 
+		point.x = *(*(dst_points + i));
+		point.y = *(*(dst_points + i) + 1);
+		point.z = *(*(dst_points + i) + 2);
 
 		// r g b setting,,,
 		std::uint8_t r(*(*(dst_points_color + i)))\
@@ -99,7 +100,7 @@ int main() {
 #endif
 	}
 
-	pcl::io::savePCDFileASCII<PointXYZRGB>("pc_0.pcd", point_cloud);
+	pcl::io::savePCDFileASCII<PointXYZRGB_double>("pc_0.pcd", point_cloud);
 	end = clock();
 	printf("Completed converting 3 images (depth, rgb, mask) to point cloud!!!\n");
 	printf("Result PCD File Path : %s\n", "pc_0.pcd");  //will use os path 

@@ -8,17 +8,12 @@
 #include "opencv2/opencv.hpp"
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
-#include "pcl/io/pcd_io.h"
-//#include "pcl/point_types.h"
-//#include "pcl/visualization/cloud_viewer.h"
-//#include <pcl/filters/passthrough.h>
-//#include <pcl/filters/impl/passthrough.hpp>
-//#include <pcl/memory.h>
-//#include <pcl/pcl_macros.h>
-//#include <pcl/point_types.h>
-//#include <pcl/point_cloud.h>
 
-//#define PCL_NO_PRECOMPILE
+
+#include "pcl/io/pcd_io.h"
+
+#include "pcl/pcl_macros.h"
+#include "pcl/point_types.h"
 
 #define DEBUG 0
 #define MAX_BLOCK_NUM 512
@@ -34,19 +29,29 @@ using namespace std;
 using namespace cv;
 using namespace pcl;
 
-//struct PointXYZRGB_double
-//{
-//    PCL_ADD_POINT4D;
-//    PCL_ADD_RGB;
-//    PCL_MAKE_ALIGNED_OPERATOR_NEW
-//} EIGEN_ALIGN16;
-//
-//POINT_CLOUD_REGISTER_POINT_STRUCT(PointXYZRGB_double,
-//    (double, x, x)
-//    (double, y, y)
-//    (double, z, z)
-//)
+#define PCL_ADD_UNION_POINT4D_DOUBLE \
+    union EIGEN_ALIGN16 { \
+      double data[4]; \
+      struct { \
+        double x; \
+        double y; \
+        double z; \
+      }; \
+    };
 
+struct EIGEN_ALIGN16 PointXYZRGB_double
+{
+    PCL_ADD_UNION_POINT4D_DOUBLE;
+    PCL_ADD_RGB;
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+};
+
+POINT_CLOUD_REGISTER_POINT_STRUCT(PointXYZRGB_double,
+    (double, x, x)
+    (double, y, y)
+    (double, z, z)
+    (std::uint32_t, rgba, rgba)
+)
 
 __global__ void img_op(double* z, unsigned char* depth_img, unsigned char* mask_img, double far_, double near_, float mask_threshold);
 __global__ void point_op(double* dst_points, unsigned char* dst_point_colors, unsigned char* src_rgb, double* src_z, double* src_inverse_k);
