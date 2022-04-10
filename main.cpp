@@ -6,6 +6,7 @@ int main() {
 	string path = ".\\DepthToPCD\\";									// relative path.
 	char num_buf[256];
 	int pixel_size = HEIGHT * WIDTH * CHANNEL;
+	clock_t start, end;
 	size_t material_size = sizeof(img_names) / sizeof(string);
 	Mat* src_imgs = new Mat[material_size];
 	PointCloud <PointXYZRGB> point_cloud;
@@ -64,7 +65,8 @@ int main() {
 			printf("image pixel value : %d\n", *(*(images + j) + i));	
 	}
 #endif	
-	
+	printf("Start converting 3 images (depth, rgb, mask) to point cloud....\n");
+	start = clock();
 	// automation start...--------------------------------------------------------------------
 	trans_automation_cuda(dst_points, dst_points_color, images);
 
@@ -72,13 +74,22 @@ int main() {
 	for (int i = 0; i < HEIGHT * WIDTH; i++) {
 		if (*(*(dst_points + i)) == NULL)
 			continue;
+		// x y z setting,,,
 		PointXYZRGB point = { (float)*(*(dst_points + i)),
 		(float)*(*(dst_points + i) + 1),
-		(float)*(*(dst_points + i) + 2),
-		*(*(dst_points_color + i)),
-		*(*(dst_points_color + i) + 1),
-		*(*(dst_points_color + i) + 2) };
+		(float)*(*(dst_points + i) + 2) };
+
+		// r g b setting,,,
+		std::uint8_t r(*(*(dst_points_color + i)))\
+			,g(*(*(dst_points_color + i) + 1))\
+			,b(*(*(dst_points_color + i) + 2));
+
+		std::uint32_t rgb = (static_cast<std::uint32_t>(r) << 16 |
+			static_cast<std::uint32_t>(g) << 8 | static_cast<std::uint32_t>(b));
+		point.rgb = *reinterpret_cast<float*>(&rgb);
+
 		point_cloud.push_back(point);
+
 #if DEBUG
 		if (cur_idx == 0) {
 			printf("x, y, z : %lf ,%lf, %lf || r, g, b : %d, %d, %d\n", \
@@ -88,14 +99,11 @@ int main() {
 #endif
 	}
 
-	pcl::io::savePCDFileASCII<PointXYZRGB>("test_pcd.pcd", point_cloud);
-	
-	//viewer.showCloud(point_cloud.makeShared());
-
-	//imshow("Depth", src_imgs[0]);
-	//imshow("RGB", src_imgs[1]);
-	//imshow("Mask", src_imgs[2]);
-
+	pcl::io::savePCDFileASCII<PointXYZRGB>("pc_0.pcd", point_cloud);
+	end = clock();
+	printf("Completed converting 3 images (depth, rgb, mask) to point cloud!!!\n");
+	printf("Result PCD File Path : %s\n", "pc_0.pcd");  //will use os path 
+	printf("elapsed time : %.2lf s\n", difftime(end, start) / 1000.0);
 
 	// img mat deallocation.
 	free(*images); 				free(images);

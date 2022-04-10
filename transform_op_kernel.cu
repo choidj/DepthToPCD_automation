@@ -52,12 +52,6 @@ __global__ void point_op(double* dst_points, unsigned char* dst_point_colors, un
 
 
         }
-        if (global_index == ((HEIGHT * WIDTH) - 1)) {
-            printf("global idx : %d, z : %lf, point : %lf , rgb : %d\n", \
-                global_index, *(src_z + global_index), *(dst_points + total_index), \
-                * (dst_point_colors + total_index));
-
-        }
 #if DEBUG
         if (blockIndex == 0) {
             printf("global idx : %d, z : %lf, point : %lf , rgb : %d\n", \
