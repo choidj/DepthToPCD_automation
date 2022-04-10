@@ -131,43 +131,49 @@ cudaError_t point_op_kernel_call(double** dst_points, unsigned char** dst_point_
         goto Error;
     }
 
-    cudaStatus = cudaMalloc((void**)&dev_rgb, size * sizeof(unsigned char));
+    cudaStatus = cudaMalloc((void**)&dev_rgb, 3 * size * sizeof(unsigned char));
     if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMalloc failed on dev_z!");
+        fprintf(stderr, "cudaMalloc failed on dev_rgb!");
         goto Error;
     }
 
     cudaStatus = cudaMalloc((void**)&dev_points, size * 3 * sizeof(double));
     if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMalloc failed on dev_depth_img!");
+        fprintf(stderr, "cudaMalloc failed on dev_points!");
         goto Error;
     }
 
     cudaStatus = cudaMalloc((void**)&dev_point_colors, size * 3 * sizeof(unsigned char));
     if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMalloc failed on dev_mask_img!");
+        fprintf(stderr, "cudaMalloc failed on dev_point_colors!");
         goto Error;
     }
 
     cudaStatus = cudaMalloc((void**)&dev_inverse_k, k_size * sizeof(double));
     if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMalloc failed on dev_mask_img!");
+        fprintf(stderr, "cudaMalloc failed on dev_inverse_k!");
         goto Error;
     }
 
     // Copy input vectors from host memory to GPU buffers.
     cudaStatus = cudaMemcpy(dev_inverse_k, inverse_k, k_size * sizeof(double), cudaMemcpyHostToDevice);
     if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMemcpy failed on dev_depth_img!");
+        fprintf(stderr, "cudaMemcpy failed on dev_inverse_k!");
         goto Error;
     }
 
     cudaStatus = cudaMemcpy(dev_z, src_z, size * sizeof(double), cudaMemcpyHostToDevice);
     if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMemcpy failed dev_mask_img!");
+        fprintf(stderr, "cudaMemcpy failed dev_z!");
         goto Error;
     }
 
+    cudaStatus = cudaMemcpy(dev_rgb, src_rgb, 3 * size * sizeof(double), cudaMemcpyHostToDevice);
+    if (cudaStatus != cudaSuccess) {
+        fprintf(stderr, "cudaMemcpy failed dev_rgb!");
+        goto Error;
+    }
+    
     // Launch a kernel on the GPU with one thread for each element.
     point_op << <grid, block >> > (dev_points, dev_point_colors, dev_rgb, dev_z, dev_inverse_k);
 
