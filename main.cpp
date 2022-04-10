@@ -55,7 +55,21 @@ int main() {
 	for (int i = 0; i < material_size; i++) {
 		memcpy(*(images + i), (src_imgs + i)->data, pixel_size * sizeof(unsigned char));
 	}
-
+	// check converting complete?
+#if DEBUG
+	for (int j = 0; j < 3; j++) {
+		if (j == 0)
+			printf("Depth image check....\n");
+		if (j == 1)
+			printf("RGB image check....\n");
+		if (j == 2)
+			printf("Mask image check....\n");
+		for (int i = 0; i < 5; i++)
+			printf("image pixel value : %d\n", *(*(images + j) + i));	
+	}
+	waitKey(50000);
+#endif	
+	
 	// automation start...--------------------------------------------------------------------
 	trans_automation_cuda(dst_points, dst_points_color, images);
 
