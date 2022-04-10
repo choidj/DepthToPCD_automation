@@ -8,6 +8,8 @@ int main() {
 	int pixel_size = HEIGHT * WIDTH * CHANNEL;
 	size_t material_size = sizeof(img_names) / sizeof(string);
 	Mat* src_imgs = new Mat[material_size];
+	PointCloud <PointXYZRGB> point_cloud;
+	//pcl::visualization::CloudViewer viewer("Check Cloud Viewer");
 
 	//---------------------------------------------------------------------------------------
 	// img mat allocation. 2-Dim. * is images (e.g., depth, rgb, mask), ** is image's pixels.
@@ -37,12 +39,15 @@ int main() {
 	//----------------------------------------------------------------------------------------
 	int cur_idx = 0;
 
+	point_cloud.height = HEIGHT;
+	point_cloud.width = WIDTH;
+	point_cloud.points.resize(WIDTH * HEIGHT);
+
 	// allocate image Mats and read opencv imread..-------------------------------------------
 	for (int i = 0; i < material_size; i++) {
 		string temp_name;
 		sprintf_s(num_buf, "%d", cur_idx);
 		temp_name = *(img_names + i) + num_buf + ".png";
-		cout << "path : " << path + temp_name << endl;
 		*(src_imgs + i) = imread(path + temp_name);
 	}
 
@@ -53,6 +58,30 @@ int main() {
 
 	// automation start...--------------------------------------------------------------------
 	trans_automation_cuda(dst_points, dst_points_color, images);
+
+	cur_idx = 0;
+	// write result point to pcd file.
+	for (auto& point : point_cloud) {
+		if (*(*(dst_points) + cur_idx) == -100. && \
+			* (*(dst_points_color) + cur_idx) == 0) {
+			cur_idx++;
+			continue;
+		}
+		point.x = *(*(dst_points) + cur_idx);
+		point.y = *(*(dst_points + 1) + cur_idx);
+		point.z = *(*(dst_points + 2) + cur_idx);
+		point.r = *(*(dst_points_color) + cur_idx);
+		point.g = *(*(dst_points_color + 1) + cur_idx);
+		point.b = *(*(dst_points_color + 2) + cur_idx);
+#if DEBUG
+		printf("x, y, z : %lf ,%lf, %lf || r, g, b : %d, %d, %d\n", point.x, point.y, point.z, point.r, point.g, point.b);
+#endif
+		cur_idx++;
+	}
+
+	pcl::io::savePCDFileASCII("test_pcd.pcd", point_cloud);
+
+	//viewer.showCloud(point_cloud.makeShared());
 
 	imshow("befo", *(src_imgs + 2));
 	//imshow("Depth", src_imgs[0]);

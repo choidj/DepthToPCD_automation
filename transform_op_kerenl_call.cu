@@ -1,10 +1,11 @@
 #include "transform_op_cuda.cuh"
 
+
 // Helper function for using CUDA to add vectors in parallel.
 cudaError_t img_op_kernel_call(double* dst_z, unsigned char* src_depth_img, unsigned char* src_mask_img) {
     double* dev_z; unsigned char* dev_depth_img; unsigned char* dev_mask_img;
 
-    double far = 5; double near = 0.3; float mask_threshold = 10;
+    double far_ = 5; double near_ = 0.3; float mask_threshold = 10;
 
     int size = HEIGHT * WIDTH;
 
@@ -16,7 +17,7 @@ cudaError_t img_op_kernel_call(double* dst_z, unsigned char* src_depth_img, unsi
 
 #if DEBUG
     for (int i = 0; i < 30; i++) {
-        printf("[i : %d] depth src : %d, mask src : %d\n", i, *(depth_img +i * 2000), *(mask_img + i * 2000));
+        printf("[i : %d] depth src : %d, mask src : %d\n", i, *(src_depth_img +i * 2000), *(src_mask_img + i * 2000));
     }
 #endif
 
@@ -60,7 +61,7 @@ cudaError_t img_op_kernel_call(double* dst_z, unsigned char* src_depth_img, unsi
     }
 
     // Launch a kernel on the GPU with one thread for each element.
-    img_op << <grid, block >> > (dev_z, dev_depth_img, dev_mask_img, far, near, mask_threshold);
+    img_op << <grid, block >> > (dev_z, dev_depth_img, dev_mask_img, far_, near_, mask_threshold);
 
     // Check for any errors launching the kernel
     cudaStatus = cudaGetLastError();
@@ -105,10 +106,10 @@ cudaError_t point_op_kernel_call(double** dst_points, unsigned char** dst_point_
 
     cudaError_t cudaStatus;
 
-    int grid2D_x = ceil((float)WIDTH / (float)128);
+    int grid2D_x = ceil((float)WIDTH / (float)NORM_BLOCK_NUM);
     int grid2D_y = HEIGHT;
 
-    dim3 grid(grid2D_x, grid2D_y, 1); dim3 block(128, 1, 1);
+    dim3 grid(grid2D_x, grid2D_y, 1); dim3 block(NORM_BLOCK_NUM, 1, 1);
 
 #if DEBUG
     for (int i = 0; i < 30; i++) {
@@ -186,13 +187,13 @@ cudaError_t point_op_kernel_call(double** dst_points, unsigned char** dst_point_
     }
 
     // Copy output vector from GPU buffer to host memory.
-    cudaStatus = cudaMemcpy(dst_points, dev_points, size * sizeof(double), cudaMemcpyDeviceToHost);
+    cudaStatus = cudaMemcpy(*dst_points, dev_points, 3 * size * sizeof(double), cudaMemcpyDeviceToHost);
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaMemcpy failed on z!");
         goto Error;
     }
 
-    cudaStatus = cudaMemcpy(dst_point_colors, dev_point_colors, size * sizeof(unsigned char), cudaMemcpyDeviceToHost);
+    cudaStatus = cudaMemcpy(*dst_point_colors, dev_point_colors, 3 * size * sizeof(unsigned char), cudaMemcpyDeviceToHost);
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaMemcpy failed on z!");
         goto Error;
@@ -215,10 +216,9 @@ void trans_automation_cuda(double** dst_point, unsigned char** dst_point_color, 
 
 #if DEBUG
     for (int i = 0; i < 30; i++) {
-        printf("[i : %d] depth src : %d, rgb src : %d, mask src : %d\n", i, *(*(src) + i * 2000), *(*(src + 1) + i * 2000), *(*(src + 2) + i * 2000));
+        printf("[i : %d] depth src : %d, rgb src : %d, mask src : %d\n", i, *(*(src_images) + i * 2000), *(*(src_images + 1) + i * 2000), *(*(src_images + 2) + i * 2000));
     }
 #endif
-
 
     // image operation kernel call  matlab :-- pts = zeros(height*width, 3) color = uint8(zeros(height * width, 3))--
     cudaStatus = img_op_kernel_call(z, *(src_images), *(src_images + 2));
@@ -226,8 +226,5 @@ void trans_automation_cuda(double** dst_point, unsigned char** dst_point_color, 
     //point operation kernel call here..
     cudaStatus = point_op_kernel_call(dst_point, dst_point_color, *(src_images + 1), z);
 
-
-
-    std::free(z);
-
+    free(z);
 }
