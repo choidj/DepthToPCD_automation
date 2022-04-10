@@ -33,8 +33,8 @@ __global__ void point_op(double* dst_points, unsigned char* dst_point_colors, un
             *(dst_points + globalIndex + HEIGHT * WIDTH * 2) = *(src_z + globalIndex);
 
             *(dst_point_colors + globalIndex) = *(src_rgb + globalIndex);
-            *(dst_point_colors + globalIndex + HEIGHT * WIDTH) = *(src_rgb + globalIndex + 1);
-            *(dst_point_colors + globalIndex + HEIGHT * WIDTH * 2) = *(src_rgb + globalIndex + 2);
+            *(dst_point_colors + globalIndex + HEIGHT * WIDTH) = *(src_rgb + globalIndex + HEIGHT * WIDTH);
+            *(dst_point_colors + globalIndex + HEIGHT * WIDTH * 2) = *(src_rgb + globalIndex + HEIGHT * WIDTH * 2);
         }
         else {
             *(dst_points + globalIndex) = -100;
@@ -48,6 +48,9 @@ __global__ void point_op(double* dst_points, unsigned char* dst_point_colors, un
 #if DEBUG
         if (globalIndex == 250000) {
             printf("global idx : %d, z : %lf, mask_img : %d , depth_img : %d\n", globalIndex, *(src_z + globalIndex), *(dst_points + globalIndex), *(dst_point_colors + globalIndex));
+            for (int i = 0; i < 9; i++) {
+                printf("inverse_k [%d] : %lf\n", i, *(src_inverse_k + i));
+            }
         }
 #endif // DEBUG
     }
