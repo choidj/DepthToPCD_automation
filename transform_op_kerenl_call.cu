@@ -17,7 +17,7 @@ cudaError_t img_op_kernel_call(double* dst_z, unsigned char* src_depth_img, unsi
 
 #if DEBUG
     for (int i = 0; i < 30; i++) {
-        printf("[i : %d] depth src : %d, mask src : %d\n", i, *(src_depth_img +i * 2000), *(src_mask_img + i * 2000));
+        printf("[i : %d] depth src : %d, mask src : %d\n", i, *(src_depth_img +i), *(src_mask_img + i));
     }
 #endif
 
@@ -35,26 +35,26 @@ cudaError_t img_op_kernel_call(double* dst_z, unsigned char* src_depth_img, unsi
         goto Error;
     }
     
-    cudaStatus = cudaMalloc((void**)&dev_depth_img, size * sizeof(unsigned char));
+    cudaStatus = cudaMalloc((void**)&dev_depth_img, CHANNEL * size * sizeof(unsigned char));
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaMalloc failed on dev_depth_img!");
         goto Error;
     }
 
-    cudaStatus = cudaMalloc((void**)&dev_mask_img, size * sizeof(unsigned char));
+    cudaStatus = cudaMalloc((void**)&dev_mask_img, CHANNEL * size * sizeof(unsigned char));
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaMalloc failed on dev_mask_img!");
         goto Error;
     }
 
     // Copy input vectors from host memory to GPU buffers.
-    cudaStatus = cudaMemcpy(dev_depth_img, src_depth_img, size * sizeof(unsigned char), cudaMemcpyHostToDevice);
+    cudaStatus = cudaMemcpy(dev_depth_img, src_depth_img, CHANNEL * size * sizeof(unsigned char), cudaMemcpyHostToDevice);
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaMemcpy failed on dev_depth_img!");
         goto Error;
     }
 
-    cudaStatus = cudaMemcpy(dev_mask_img, src_mask_img, size * sizeof(unsigned char), cudaMemcpyHostToDevice);
+    cudaStatus = cudaMemcpy(dev_mask_img, src_mask_img, CHANNEL * size * sizeof(unsigned char), cudaMemcpyHostToDevice);
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaMemcpy failed dev_mask_img!");
         goto Error;
@@ -112,9 +112,17 @@ cudaError_t point_op_kernel_call(double** dst_points, unsigned char** dst_point_
     dim3 grid(grid2D_x, grid2D_y, 1); dim3 block(NORM_BLOCK_NUM, 1, 1);
 
 #if DEBUG
-    for (int i = 0; i < 30; i++) {
-        printf("[i : %d] rgb src : %d, mask src : %d\n", i, *(src_rgb + i * 2000), *(src_z + i * 2000));
+    int inx = 0;
+    for (int i = 0; i < HEIGHT; i++) {
+        for (int j = 0; j < WIDTH; j++) {
+            if (*(src_z + i * WIDTH + j) != 1.3) {
+                printf("height : %d, width : %d, rgb src : %d, z src : %lf\n", i, j, *(src_rgb + i), *(src_z + i * WIDTH + j));
+                if (*(src_z + i * WIDTH + j) < 0)
+                    inx++;
+            }
+        }
     }
+    printf("total - point : %d\n", inx);
 #endif
 
     // Choose which GPU to run on, change this on a multi-GPU system.
@@ -131,19 +139,19 @@ cudaError_t point_op_kernel_call(double** dst_points, unsigned char** dst_point_
         goto Error;
     }
 
-    cudaStatus = cudaMalloc((void**)&dev_rgb, 3 * size * sizeof(unsigned char));
+    cudaStatus = cudaMalloc((void**)&dev_rgb, CHANNEL * size * sizeof(unsigned char));
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaMalloc failed on dev_rgb!");
         goto Error;
     }
 
-    cudaStatus = cudaMalloc((void**)&dev_points, size * 3 * sizeof(double));
+    cudaStatus = cudaMalloc((void**)&dev_points, CHANNEL * size * sizeof(double));
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaMalloc failed on dev_points!");
         goto Error;
     }
 
-    cudaStatus = cudaMalloc((void**)&dev_point_colors, size * 3 * sizeof(unsigned char));
+    cudaStatus = cudaMalloc((void**)&dev_point_colors, CHANNEL * size * sizeof(unsigned char));
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaMalloc failed on dev_point_colors!");
         goto Error;
@@ -168,7 +176,7 @@ cudaError_t point_op_kernel_call(double** dst_points, unsigned char** dst_point_
         goto Error;
     }
 
-    cudaStatus = cudaMemcpy(dev_rgb, src_rgb, 3 * size * sizeof(double), cudaMemcpyHostToDevice);
+    cudaStatus = cudaMemcpy(dev_rgb, src_rgb, CHANNEL * size * sizeof(unsigned char), cudaMemcpyHostToDevice);
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaMemcpy failed dev_rgb!");
         goto Error;
@@ -193,13 +201,13 @@ cudaError_t point_op_kernel_call(double** dst_points, unsigned char** dst_point_
     }
 
     // Copy output vector from GPU buffer to host memory.
-    cudaStatus = cudaMemcpy(*dst_points, dev_points, 3 * size * sizeof(double), cudaMemcpyDeviceToHost);
+    cudaStatus = cudaMemcpy(*dst_points, dev_points, CHANNEL * size * sizeof(double), cudaMemcpyDeviceToHost);
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaMemcpy failed on z!");
         goto Error;
     }
 
-    cudaStatus = cudaMemcpy(*dst_point_colors, dev_point_colors, 3 * size * sizeof(unsigned char), cudaMemcpyDeviceToHost);
+    cudaStatus = cudaMemcpy(*dst_point_colors, dev_point_colors, CHANNEL * size * sizeof(unsigned char), cudaMemcpyDeviceToHost);
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaMemcpy failed on z!");
         goto Error;
@@ -222,7 +230,7 @@ void trans_automation_cuda(double** dst_point, unsigned char** dst_point_color, 
 
 #if DEBUG
     for (int i = 0; i < 30; i++) {
-        printf("[i : %d] depth src : %d, rgb src : %d, mask src : %d\n", i, *(*(src_images) + i * 2000), *(*(src_images + 1) + i * 2000), *(*(src_images + 2) + i * 2000));
+        printf("[i : %d] depth src : %d, rgb src : %d, mask src : %d\n", i, *(*(src_images) + i), *(*(src_images + 1) + i), *(*(src_images + 2) + i));
     }
 #endif
 

@@ -2,55 +2,68 @@
 
 
 __global__ void img_op(double* z, unsigned char* depth_img, unsigned char* mask_img, double far_, double near_, float mask_threshold) {
-    int globalIndex = threadIdx.x + blockDim.x * blockIdx.x;
+    int global_index = threadIdx.x + blockDim.x * blockIdx.x;
+    int total_index = 3 * global_index + 2;
 
+    if (global_index < (HEIGHT* WIDTH)) {
+        *(mask_img + total_index) = *(mask_img + total_index) > mask_threshold;
 
-    *(mask_img + globalIndex) = *(mask_img + globalIndex) > mask_threshold;
-
-    *(z + globalIndex) = 1. - (far_ - near_)*(((double)(*(depth_img + globalIndex)) / 255.) * (*(mask_img + globalIndex))) + near_;
-
+        *(z + global_index) = 1. - (far_ - near_) * (((double)(*(depth_img + total_index)) / 255.) * (*(mask_img + total_index))) + near_;
 #if DEBUG
-    if (globalIndex == 250000) {
-        printf("global idx : %d, z : %lf, mask_img : %d , depth_img : %d\n", globalIndex, *(z + globalIndex), *(mask_img + globalIndex), *(depth_img + globalIndex));
-    }
+        if (global_index == 250000) {
+            printf("global idx : %d, z : %lf, mask_img : %d , depth_img : %d\n", \
+                global_index, *(z + global_index), *(mask_img + total_index), *(depth_img + total_index));
+        }
 #endif // DEBUG
+    }
 }
 
 __global__ void point_op(double* dst_points, unsigned char* dst_point_colors, unsigned char* src_rgb, double* src_z, double* src_inverse_k) {
     int blockIndex = threadIdx.x + blockIdx.x * blockDim.x;
-
+    
     if (blockIndex < WIDTH) {
-        int globalIndex = blockIndex + blockIdx.y * WIDTH;
-        int u = blockIndex;
-        int v = blockIdx.y;
-        if (*(src_z + globalIndex) > 0) {
-            *(dst_points + globalIndex) = *(src_z + globalIndex) * *(src_inverse_k)*u + \
-                *(src_z + globalIndex) * *(src_inverse_k + 1) * v + \
-                *(src_z + globalIndex) * *(src_inverse_k + 2);
-            *(dst_points + globalIndex + HEIGHT * WIDTH) = *(src_z + globalIndex) * *(src_inverse_k + 4) * u + \
-                *(src_z + globalIndex) * *(src_inverse_k + 5) * v + \
-                *(src_z + globalIndex) * *(src_inverse_k + 6);
-            *(dst_points + globalIndex + HEIGHT * WIDTH * 2) = *(src_z + globalIndex);
+        int global_index = blockIndex + blockIdx.y * WIDTH;
+        int total_index = 3 * global_index;
 
-            *(dst_point_colors + globalIndex) = *(src_rgb + globalIndex);
-            *(dst_point_colors + globalIndex + HEIGHT * WIDTH) = *(src_rgb + globalIndex + HEIGHT * WIDTH);
-            *(dst_point_colors + globalIndex + HEIGHT * WIDTH * 2) = *(src_rgb + globalIndex + HEIGHT * WIDTH * 2);
+        double u = blockIndex;
+        double v = blockIdx.y;
+
+        if (*(src_z + global_index) < 0) {
+            *(dst_points + total_index) = *(src_z + global_index) * *(src_inverse_k) * u + \
+                *(src_z + global_index) * *(src_inverse_k + 1) * v + \
+                *(src_z + global_index) * *(src_inverse_k + 2);
+            *(dst_points + total_index + 1) = *(src_z + global_index) * *(src_inverse_k + 3) * u + \
+                *(src_z + global_index) * *(src_inverse_k + 4) * v + \
+                *(src_z + global_index) * *(src_inverse_k + 5);
+            *(dst_points + total_index + 2) = *(src_z + global_index);
+
+            *(dst_point_colors + total_index) = *(src_rgb + total_index + 2);
+            *(dst_point_colors + total_index + 1) = *(src_rgb + total_index + 1);
+            *(dst_point_colors + total_index + 2) = *(src_rgb + total_index);
         }
         else {
-            *(dst_points + globalIndex) = -100;
-            *(dst_points + globalIndex + HEIGHT * WIDTH) = -100;
-            *(dst_points + globalIndex + HEIGHT * WIDTH * 2) = -100;
+            *(dst_points + total_index) = NULL;
+            *(dst_points + total_index + 1) = NULL;
+            *(dst_points + total_index + 2) = NULL;
 
-            *(dst_point_colors + globalIndex) = 0;
-            *(dst_point_colors + globalIndex + HEIGHT * WIDTH) = 0;
-            *(dst_point_colors + globalIndex + HEIGHT * WIDTH * 2) = 0;
+            *(dst_point_colors + total_index) = NULL;
+            *(dst_point_colors + total_index + 1) = NULL;
+            *(dst_point_colors + total_index + 2) = NULL;
+
+
+        }
+        if (global_index == ((HEIGHT * WIDTH) - 1)) {
+            printf("global idx : %d, z : %lf, point : %lf , rgb : %d\n", \
+                global_index, *(src_z + global_index), *(dst_points + total_index), \
+                * (dst_point_colors + total_index));
+
         }
 #if DEBUG
-        if (globalIndex == 250000) {
-            printf("global idx : %d, z : %lf, mask_img : %d , depth_img : %d\n", globalIndex, *(src_z + globalIndex), *(dst_points + globalIndex), *(dst_point_colors + globalIndex));
-            for (int i = 0; i < 9; i++) {
-                printf("inverse_k [%d] : %lf\n", i, *(src_inverse_k + i));
-            }
+        if (blockIndex == 0) {
+            printf("global idx : %d, z : %lf, point : %lf , rgb : %d\n", \
+                global_index, *(src_z + global_index), *(dst_points + total_index),\
+                *(dst_point_colors + total_index));
+
         }
 #endif // DEBUG
     }

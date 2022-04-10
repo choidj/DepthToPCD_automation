@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <stdio.h>
+#include <omp.h>
 #include <stdlib.h>
 #include "opencv2/opencv.hpp"
 #include "cuda_runtime.h"
@@ -10,21 +11,21 @@
 #include "pcl/point_types.h"
 //#include "pcl/visualization/cloud_viewer.h"
 
-#define DEBUG 1
+#define DEBUG 0
 #define MAX_BLOCK_NUM 512
-#define NORM_BLOCK_NUM 128
+#define NORM_BLOCK_NUM 256
 #define BLOCK_SIZE 16
 
 // image size.
-#define HEIGHT 640
-#define WIDTH 480
+#define HEIGHT 480
+#define WIDTH 640
 #define CHANNEL 3
 
 using namespace std;
 using namespace cv;
 using namespace pcl;
 
-__global__ void img_op(double* dst_z, unsigned char* src_depth_img, unsigned char* src_mask_img, double far, double near, float mask_threshold);
+__global__ void img_op(double* z, unsigned char* depth_img, unsigned char* mask_img, double far_, double near_, float mask_threshold);
 __global__ void point_op(double* dst_points, unsigned char* dst_point_colors, unsigned char* src_rgb, double* src_z, double* src_inverse_k);
 
 

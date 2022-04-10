@@ -25,23 +25,19 @@ int main() {
 	// dst_points, dst_point_color allocation...
 	double** dst_points;
 	unsigned char** dst_points_color;
-	dst_points = (double**)malloc(3 * sizeof(double*));
-	*(dst_points) = (double*)malloc(pixel_size * sizeof(double));
+	dst_points = (double**)malloc(HEIGHT * WIDTH * sizeof(double*));
+	*(dst_points) = (double*)malloc(CHANNEL * HEIGHT * WIDTH * sizeof(double));
 
-	dst_points_color = (unsigned char**)malloc(3 * sizeof(unsigned char*));
-	*(dst_points_color) = (unsigned char*)malloc(pixel_size * sizeof(unsigned char));
+	dst_points_color = (unsigned char**)malloc(HEIGHT * WIDTH * sizeof(unsigned char*));
+	*(dst_points_color) = (unsigned char*)malloc(CHANNEL * HEIGHT * WIDTH * sizeof(unsigned char));
 
 	if (dst_points == NULL || dst_points_color == NULL) { printf("dst is falied to allocation.\n"); return -1; }
-	for (int i = 1; i < 3; i++) {
-		*(dst_points_color + i) = *(dst_points_color + i - 1) + HEIGHT * WIDTH;
-		*(dst_points + i) = *(dst_points + i - 1) + HEIGHT * WIDTH;
+	for (int i = 1; i < HEIGHT * WIDTH; i++) {
+		*(dst_points_color + i) = *(dst_points_color + i - 1) + CHANNEL;
+		*(dst_points + i) = *(dst_points + i - 1) + CHANNEL;
 	}
 	//----------------------------------------------------------------------------------------
 	int cur_idx = 0;
-
-	point_cloud.height = HEIGHT;
-	point_cloud.width = WIDTH;
-	point_cloud.points.resize(WIDTH * HEIGHT);
 
 	// allocate image Mats and read opencv imread..-------------------------------------------
 	for (int i = 0; i < material_size; i++) {
@@ -64,52 +60,47 @@ int main() {
 			printf("RGB image check....\n");
 		if (j == 2)
 			printf("Mask image check....\n");
-		for (int i = 0; i < 5; i++)
+		for (int i = 0; i < 6; i++)
 			printf("image pixel value : %d\n", *(*(images + j) + i));	
 	}
-	waitKey(50000);
 #endif	
 	
 	// automation start...--------------------------------------------------------------------
 	trans_automation_cuda(dst_points, dst_points_color, images);
 
 	cur_idx = 0;
-	// write result point to pcd file.
-	for (auto& point : point_cloud) {
-		if (*(*(dst_points) + cur_idx) == -100. && \
-			* (*(dst_points_color) + cur_idx) == 0) {
-			cur_idx++;
+	for (int i = 0; i < HEIGHT * WIDTH; i++) {
+		if (*(*(dst_points + i)) == NULL)
 			continue;
-		}
-		point.x = *(*(dst_points) + cur_idx);
-		point.y = *(*(dst_points + 1) + cur_idx);
-		point.z = *(*(dst_points + 2) + cur_idx);
-		point.r = *(*(dst_points_color) + cur_idx);
-		point.g = *(*(dst_points_color + 1) + cur_idx);
-		point.b = *(*(dst_points_color + 2) + cur_idx);
+		PointXYZRGB point = { (float)*(*(dst_points + i)),
+		(float)*(*(dst_points + i) + 1),
+		(float)*(*(dst_points + i) + 2),
+		*(*(dst_points_color + i)),
+		*(*(dst_points_color + i) + 1),
+		*(*(dst_points_color + i) + 2) };
+		point_cloud.push_back(point);
 #if DEBUG
-		printf("x, y, z : %lf ,%lf, %lf || r, g, b : %d, %d, %d\n", point.x, point.y, point.z, point.r, point.g, point.b);
+		if (cur_idx == 0) {
+			printf("x, y, z : %lf ,%lf, %lf || r, g, b : %d, %d, %d\n", \
+				point.x, point.y, point.z, point.r, point.g, point.b);
+			cur_idx++;
+		}
 #endif
-		cur_idx++;
 	}
 
-	pcl::io::savePCDFileASCII("test_pcd.pcd", point_cloud);
-
+	pcl::io::savePCDFileASCII<PointXYZRGB>("test_pcd.pcd", point_cloud);
+	
 	//viewer.showCloud(point_cloud.makeShared());
 
-	imshow("befo", *(src_imgs + 2));
 	//imshow("Depth", src_imgs[0]);
 	//imshow("RGB", src_imgs[1]);
 	//imshow("Mask", src_imgs[2]);
-
-	waitKey(50000);
 
 
 	// img mat deallocation.
 	free(*images); 				free(images);
 	free(*dst_points);			free(dst_points);
 	free(*dst_points_color);	free(dst_points_color);
-	delete(src_imgs);
 
 	return 0;
 }
