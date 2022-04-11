@@ -104,6 +104,7 @@ void depth_to_pcd(int img_set_size, string str_path, string dst_path) {
 		start = clock();
 		// automation start...--------------------------------------------------------------------
 		trans_automation_cuda(dst_points, dst_points_color, images);
+		end = clock();
 
 		cur_idx = 0;
 		for (int i = 0; i < HEIGHT * WIDTH; i++) {
@@ -120,7 +121,7 @@ void depth_to_pcd(int img_set_size, string str_path, string dst_path) {
 				, g(*(*(dst_points_color + i) + 1))\
 				, b(*(*(dst_points_color + i) + 2));
 
-			std::uint32_t rgb = (static_cast<std::uint32_t>(r) << 16 |
+			std::uint32_t rgb = (static_cast<std::uint32_t>(r) << 16 |\
 				static_cast<std::uint32_t>(g) << 8 | static_cast<std::uint32_t>(b));
 			point.rgb = *reinterpret_cast<float*>(&rgb);
 
@@ -142,7 +143,6 @@ void depth_to_pcd(int img_set_size, string str_path, string dst_path) {
 		result_path = dst_path + "\\" + "pc_0.pcd";
 		io::savePCDFileASCII<PointXYZRGB_double>(result_path, point_cloud);
 
-		end = clock();
 
 		printf("Completed converting 3 images (depth, rgb, mask) to point cloud!!!\n");
 		printf("Result PCD File Path : %s\n", result_path.c_str());  //will use os path 
