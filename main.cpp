@@ -10,7 +10,7 @@ int main() {
 	string temp = path_buf;
 
 	string dataset_path = temp + "\\dataset\\";
-	string pcd_path = dataset_path + "pcd_result";
+	string pcd_path = dataset_path + "pointCloud";
 
 	strcpy(dataset_path_, dataset_path.c_str());
 	strcpy(pcd_path_, pcd_path.c_str());
@@ -19,7 +19,7 @@ int main() {
 
 
 	printf("pcd_path, dataset_path : %s, %s\n", pcd_path.c_str(), dataset_path.c_str());
-	depth_to_pcd(1, dataset_path, pcd_path);
+	depth_to_pcd(10, dataset_path);
 
 	return 0;
 }
@@ -27,8 +27,8 @@ int main() {
 
 // dataset format : depth_0.png, depth_1.png ,...,
 // result format : pc_0.png, pc_1.png ,...,
-void depth_to_pcd(int img_set_size, string str_path, string dst_path) {
-	string objs_names[] = { "depth_", "rgb_", "mask_", "pc_"};		// image materials for making PCD.
+void depth_to_pcd(int img_set_size, string dataset_path) {
+	string objs_path[] = { dataset_path + "depth\\", dataset_path + "RGB\\", dataset_path + "mask\\", dataset_path + "pointCloud\\"};		// image materials for making PCD.
 	string temp_name;
 	string result_path;
 	char num_buf[56];
@@ -47,44 +47,71 @@ void depth_to_pcd(int img_set_size, string str_path, string dst_path) {
 
 	//---------------------------------------------------------------------------------------
 	// img mat allocation. 2-Dim. * is images (e.g., depth, rgb, mask), ** is image's pixels.
-	unsigned char** images;
-	images = (unsigned char**)malloc(images_size * sizeof(unsigned char*));
-	*(images) = (unsigned char*)malloc(images_size * pixel_size * sizeof(unsigned char));
+	unsigned char*** images;
+	images = (unsigned char***)malloc(img_set_size * sizeof(unsigned char**));
+	*images = (unsigned char**)malloc(img_set_size * images_size * sizeof(unsigned char*));
+	**images = (unsigned char*)malloc(img_set_size * images_size * pixel_size * sizeof(unsigned char));
 	// check if malloc is failed...
 	if (images == NULL) { printf("images is falied to allocation.\n"); return ; }
-	for (int i = 1; i < images_size; i++) {
-		*(images + i) = *(images + i - 1) + pixel_size;
+
+	for (int j = 0; j < img_set_size;) {
+		for (int i = 1; i < images_size; i++) {
+			*(*(images + j) + i) = *(*(images + j) + i - 1) + pixel_size;
+		}
+		j++;
+		*(images + j) = *(images + j - 1) + pixel_size * images_size;
 	}
 	//----------------------------------------------------------------------------------------
 	// dst_points, dst_point_color allocation...
-	double** dst_points;
-	unsigned char** dst_points_color;
-	dst_points = (double**)malloc(HEIGHT * WIDTH * sizeof(double*));
-	*(dst_points) = (double*)malloc(CHANNEL * HEIGHT * WIDTH * sizeof(double));
+	double*** dst_points;
+	unsigned char*** dst_points_color;
+	dst_points = (double***)malloc(img_set_size * sizeof(double**));
+	*dst_points = (double**)malloc(img_set_size * HEIGHT * WIDTH * sizeof(double*));
+	**dst_points = (double*)malloc(img_set_size * CHANNEL * HEIGHT * WIDTH * sizeof(double));
 
-	dst_points_color = (unsigned char**)malloc(HEIGHT * WIDTH * sizeof(unsigned char*));
-	*(dst_points_color) = (unsigned char*)malloc(CHANNEL * HEIGHT * WIDTH * sizeof(unsigned char));
+	dst_points_color = (unsigned char***)malloc(img_set_size * sizeof(unsigned char**));
+	*dst_points_color = (unsigned char**)malloc(img_set_size * HEIGHT * WIDTH * sizeof(unsigned char*));
+	**dst_points_color = (unsigned char*)malloc(img_set_size * CHANNEL * HEIGHT * WIDTH * sizeof(unsigned char));
 
 	if (dst_points == NULL || dst_points_color == NULL) { printf("dst is falied to allocation.\n"); return ; }
-	for (int i = 1; i < HEIGHT * WIDTH; i++) {
-		*(dst_points_color + i) = *(dst_points_color + i - 1) + CHANNEL;
-		*(dst_points + i) = *(dst_points + i - 1) + CHANNEL;
+	for (int j = 1; j < img_set_size; j++) {
+		double** temp_point = *(dst_points + j);
+		unsigned char** temp_point_color = *(dst_points_color + j);
+
+		*(temp_point + j) = *(temp_point + j - 1) + images_size;
+		*(temp_point_color + j) = *(temp_point_color + j - 1) + images_size;
+		for (int i = 1; i < HEIGHT * WIDTH; i++) {
+			*(dst_points_color + i) = *(dst_points_color + i - 1) + CHANNEL;
+			*(temp_point + i) = *(temp_point + i - 1) + CHANNEL;
+		}
+	}
+
+	for (int j = 1; j < img_set_size; j++) {
+		for (int i = 1; i < HEIGHT * WIDTH; i++) {
+			*(*(dst_points_color + j) + i) = *(*(dst_points_color + j) + i - 1) + CHANNEL;
+			*(*(dst_points + j) + i) = *(*(dst_points + j) + i - 1) + CHANNEL;
+		}
+		*(dst_points_color + j) = *(dst_points_color + j - 1) + pixel_size * images_size;
+		*(dst_points + j) = *(dst_points + j - 1) + pixel_size * images_size;
 	}
 	//----------------------------------------------------------------------------------------
 	
 	// allocate image Mats and read opencv imread..-------------------------------------------
-	for (int i = 0; i < images_size; i++) {
-		string temp_name;
-		sprintf_s(num_buf, "%d", i);
-		temp_name = *(objs_names + i) + num_buf + ".png";
-		*(src_imgs + i) = imread(str_path + temp_name);
-		memset(num_buf, 0, 56);
+	for (int j = 0; j < img_set_size; j++) {
+		for (int i = 0; i < images_size; i++) {
+			string temp_name;
+			sprintf_s(num_buf, "%d", i);
+			temp_name = *(objs_path + i) + num_buf + ".png";
+			*(src_imgs + i) = imread(dataset_path + temp_name);
+			memset(num_buf, 0, 56);
+		}
+
+		// opencv Mat convert into usigned char..-------------------------------------------------
+		for (int i = 0; i < images_size; i++) {
+			memcpy(*(*(images + j) + i), (src_imgs + i)->data, pixel_size * sizeof(unsigned char));
+		}
 	}
 
-	// opencv Mat convert into usigned char..-------------------------------------------------
-	for (int i = 0; i < images_size; i++) {
-		memcpy(*(images + i), (src_imgs + i)->data, pixel_size * sizeof(unsigned char));
-	}
 	// check converting complete?
 #if DEBUG
 	for (int j = 0; j < 3; j++) {
@@ -101,29 +128,30 @@ void depth_to_pcd(int img_set_size, string str_path, string dst_path) {
 	printf("Start converting 3 images (depth, rgb, mask) to point cloud....\n");
 	start = clock();
 	// automation start...--------------------------------------------------------------------
-	trans_automation_cuda(dst_points, dst_points_color, images);
+	gene_automation_cuda(dst_points, dst_points_color, images, img_set_size);
 	end = clock();
 
 	cur_idx = 0;
-	for (int i = 0; i < HEIGHT * WIDTH; i++) {
-		if (*(*(dst_points + i)) == NULL)
-			continue;
-		// x y z setting,,,
-		PointXYZRGB_double point;
-		point.x = *(*(dst_points + i));
-		point.y = *(*(dst_points + i) + 1);
-		point.z = *(*(dst_points + i) + 2);
+	for (int j = 0; j < img_set_size; j++) {
+		for (int i = 0; i < HEIGHT * WIDTH; i++) {
+			if (*(*(dst_points + i)) == NULL)
+				continue;
+			// x y z setting,,,
+			PointXYZRGB_double point;
+			point.x = *(*(*(dst_points + j) + i));
+			point.y = *(*(*(dst_points + j) + i) + 1);
+			point.z = *(*(*(dst_points + j) + i) + 2);
 
-		// r g b setting,,,
-		std::uint8_t r(*(*(dst_points_color + i)))\
-			, g(*(*(dst_points_color + i) + 1))\
-			, b(*(*(dst_points_color + i) + 2));
+			// r g b setting,,,
+			std::uint8_t r(*(*(*(dst_points_color + j) + i)))\
+				, g(*(*(*(dst_points_color + j) + i) + 1))\
+				, b(*(*(*(dst_points_color + j) + i) + 2));
 
-		std::uint32_t rgb = (static_cast<std::uint32_t>(r) << 16 |\
-			static_cast<std::uint32_t>(g) << 8 | static_cast<std::uint32_t>(b));
-		point.rgb = *reinterpret_cast<float*>(&rgb);
+			std::uint32_t rgb = (static_cast<std::uint32_t>(r) << 16 | \
+				static_cast<std::uint32_t>(g) << 8 | static_cast<std::uint32_t>(b));
+			point.rgb = *reinterpret_cast<float*>(&rgb);
 
-		point_cloud.push_back(point);
+			point_cloud.push_back(point);
 
 #if DEBUG
 
@@ -133,24 +161,24 @@ void depth_to_pcd(int img_set_size, string str_path, string dst_path) {
 			cur_idx++;
 		}
 #endif
+		}
+
+		sprintf_s(num_buf, "%d", j);
+		temp_name = *(objs_path + 3) + num_buf + ".pcd";
+		memset(num_buf, 0, 56);
+		result_path = temp_name;
+
+		io::savePCDFileASCII<PointXYZRGB_double>(result_path, point_cloud);
+
+		printf("Completed converting 3 images (depth, rgb, mask) to point cloud!!!\n");
+		printf("Result PCD File Path : %s\n", result_path.c_str());  //will use os path 
+		printf("elapsed time : %.2lf s\n", difftime(end, start) / 1000.0);
 	}
 		
-	sprintf_s(num_buf, "%d", cur_data);
-	temp_name = *(objs_names + 3) + num_buf + ".png";
-	memset(num_buf, 0, 56);
-	result_path = dst_path + "\\" + "pc_0.pcd";
-	io::savePCDFileASCII<PointXYZRGB_double>(result_path, point_cloud);
-
-
-	printf("Completed converting 3 images (depth, rgb, mask) to point cloud!!!\n");
-	printf("Result PCD File Path : %s\n", result_path.c_str());  //will use os path 
-	printf("elapsed time : %.2lf s\n", difftime(end, start) / 1000.0);
-
-	
 
 	// img mat deallocation.
-	free(*images); 				free(images);
-	free(*dst_points);			free(dst_points);
-	free(*dst_points_color);	free(dst_points_color);
+	free(**images);				free(*images); 				free(images);
+	free(**dst_points);			free(*dst_points);			free(dst_points);
+	free(**dst_points_color);	free(*dst_points_color);	free(dst_points_color);
 
 }

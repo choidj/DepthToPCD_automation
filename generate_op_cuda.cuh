@@ -55,13 +55,13 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(PointXYZRGB_double,
     (std::uint32_t, rgba, rgba)
 )
 
-__global__ void img_op(double* z, unsigned char* depth_img, unsigned char* mask_img, double far_, double near_, float mask_threshold);
+__global__ void img_op(double* z, unsigned char* data, double far_, double near_, float mask_threshold);
 __global__ void point_op(double* dst_points, unsigned char* dst_point_colors, unsigned char* src_rgb, double* src_z, double* src_inverse_k);
 
 
-cudaError_t img_op_kernel_call(double* dst_z, unsigned char* src_depth_img, unsigned char* scr_mask_img);
-cudaError_t point_op_kernel_call(double** dst_points, unsigned char** dst_point_colors, unsigned char* src_rgb, double* src_z);
+cudaError_t img_op_kernel_call(double* dst_z, unsigned char*** src, int img_set_size);
+cudaError_t point_op_kernel_call(double*** dst_points, unsigned char*** dst_point_colors, unsigned char*** src, double* src_z, int img_set_size);
 
-void trans_automation_cuda(double** dst_point, unsigned char** dst_point_color, unsigned char** src_images);
-void depth_to_pcd(int img_set_size, string str_path, string dst_path);
+void gene_automation_cuda(double*** dst_point, unsigned char*** dst_point_color, unsigned char*** src_images, int img_set_size);
+void depth_to_pcd(int img_set_size, string dataset_path);
 
