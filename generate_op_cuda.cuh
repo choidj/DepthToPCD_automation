@@ -9,7 +9,10 @@
 #include <direct.h>	//getcwd
 #include <omp.h>
 #include <stdlib.h>
+#include <conio.h>
+
 #include "opencv2/opencv.hpp"
+
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 

@@ -18,9 +18,7 @@ int main() {
 	mkdir(pcd_path_);
 
 
-	printf("pcd_path, dataset_path : %s, %s\n", pcd_path.c_str(), dataset_path.c_str());
 	depth_to_pcd(2000, dataset_path);
-
 
 	return 0;
 }
@@ -85,7 +83,6 @@ void depth_to_pcd(int img_set_size, string dataset_path) {
 				temp_name = *(objs_path + i) + num_buf + ".exr";
 			else
 				temp_name = *(objs_path + i) + num_buf + ".png";
-			printf("path : %s\n", temp_name.c_str());
 			if (i == 0) {
 				*(src_imgs + i) = imread(temp_name, IMREAD_ANYCOLOR | IMREAD_ANYDEPTH);
 				*(src_imgs + i) *= 255.;
@@ -116,7 +113,8 @@ void depth_to_pcd(int img_set_size, string dataset_path) {
 			}
 		}
 #endif	
-		printf("Start converting 3 images (depth, rgb, mask) to point cloud....\n");
+		clrscr();
+		printf("[%4d] Start converting 3 images (depth, rgb, mask) to point cloud....\n", cur_data);
 		start = clock();
 		// automation start...--------------------------------------------------------------------
 		trans_automation_cuda(dst_points, dst_points_color, images);
