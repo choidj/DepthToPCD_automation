@@ -113,7 +113,7 @@ void depth_to_pcd(int img_set_size, string dataset_path) {
 			}
 		}
 #endif	
-		clrscr();
+		system("cls");
 		printf("[%4d] Start converting 3 images (depth, rgb, mask) to point cloud....\n", cur_data);
 		start = clock();
 		// automation start...--------------------------------------------------------------------
