@@ -72,82 +72,80 @@ void depth_to_pcd(int img_set_size, string str_path, string dst_path) {
 	}
 	//----------------------------------------------------------------------------------------
 	
-	//pcd generation start.....
-	for (int cur_data = 0; cur_data < img_set_size; cur_data++) {
-		// allocate image Mats and read opencv imread..-------------------------------------------
-		for (int i = 0; i < images_size; i++) {
-			string temp_name;
-			sprintf_s(num_buf, "%d", cur_data);
-			temp_name = *(objs_names + i) + num_buf + ".png";
-			*(src_imgs + i) = imread(str_path + temp_name);
-			memset(num_buf, 0, 56);
-		}
-
-		// opencv Mat convert into usigned char..-------------------------------------------------
-		for (int i = 0; i < images_size; i++) {
-			memcpy(*(images + i), (src_imgs + i)->data, pixel_size * sizeof(unsigned char));
-		}
-		// check converting complete?
-#if DEBUG
-		for (int j = 0; j < 3; j++) {
-			if (j == 0)
-				printf("Depth image check....\n");
-			if (j == 1)
-				printf("RGB image check....\n");
-			if (j == 2)
-				printf("Mask image check....\n");
-			for (int i = 0; i < 6; i++)
-				printf("image pixel value : %d\n", *(*(images + j) + i));
-		}
-#endif	
-		printf("Start converting 3 images (depth, rgb, mask) to point cloud....\n");
-		start = clock();
-		// automation start...--------------------------------------------------------------------
-		trans_automation_cuda(dst_points, dst_points_color, images);
-		end = clock();
-
-		cur_idx = 0;
-		for (int i = 0; i < HEIGHT * WIDTH; i++) {
-			if (*(*(dst_points + i)) == NULL)
-				continue;
-			// x y z setting,,,
-			PointXYZRGB_double point;
-			point.x = *(*(dst_points + i));
-			point.y = *(*(dst_points + i) + 1);
-			point.z = *(*(dst_points + i) + 2);
-
-			// r g b setting,,,
-			std::uint8_t r(*(*(dst_points_color + i)))\
-				, g(*(*(dst_points_color + i) + 1))\
-				, b(*(*(dst_points_color + i) + 2));
-
-			std::uint32_t rgb = (static_cast<std::uint32_t>(r) << 16 |\
-				static_cast<std::uint32_t>(g) << 8 | static_cast<std::uint32_t>(b));
-			point.rgb = *reinterpret_cast<float*>(&rgb);
-
-			point_cloud.push_back(point);
-
-#if DEBUG
-
-			if (cur_idx == 0) {
-				printf("x, y, z : %lf ,%lf, %lf || r, g, b : %d, %d, %d\n", \
-					point.x, point.y, point.z, point.r, point.g, point.b);
-				cur_idx++;
-			}
-#endif
-		}
-		
-		sprintf_s(num_buf, "%d", cur_data);
-		temp_name = *(objs_names + 3) + num_buf + ".png";
+	// allocate image Mats and read opencv imread..-------------------------------------------
+	for (int i = 0; i < images_size; i++) {
+		string temp_name;
+		sprintf_s(num_buf, "%d", i);
+		temp_name = *(objs_names + i) + num_buf + ".png";
+		*(src_imgs + i) = imread(str_path + temp_name);
 		memset(num_buf, 0, 56);
-		result_path = dst_path + "\\" + "pc_0.pcd";
-		io::savePCDFileASCII<PointXYZRGB_double>(result_path, point_cloud);
-
-
-		printf("Completed converting 3 images (depth, rgb, mask) to point cloud!!!\n");
-		printf("Result PCD File Path : %s\n", result_path.c_str());  //will use os path 
-		printf("elapsed time : %.2lf s\n", difftime(end, start) / 1000.0);
 	}
+
+	// opencv Mat convert into usigned char..-------------------------------------------------
+	for (int i = 0; i < images_size; i++) {
+		memcpy(*(images + i), (src_imgs + i)->data, pixel_size * sizeof(unsigned char));
+	}
+	// check converting complete?
+#if DEBUG
+	for (int j = 0; j < 3; j++) {
+		if (j == 0)
+			printf("Depth image check....\n");
+		if (j == 1)
+			printf("RGB image check....\n");
+		if (j == 2)
+			printf("Mask image check....\n");
+		for (int i = 0; i < 6; i++)
+			printf("image pixel value : %d\n", *(*(images + j) + i));
+	}
+#endif	
+	printf("Start converting 3 images (depth, rgb, mask) to point cloud....\n");
+	start = clock();
+	// automation start...--------------------------------------------------------------------
+	trans_automation_cuda(dst_points, dst_points_color, images);
+	end = clock();
+
+	cur_idx = 0;
+	for (int i = 0; i < HEIGHT * WIDTH; i++) {
+		if (*(*(dst_points + i)) == NULL)
+			continue;
+		// x y z setting,,,
+		PointXYZRGB_double point;
+		point.x = *(*(dst_points + i));
+		point.y = *(*(dst_points + i) + 1);
+		point.z = *(*(dst_points + i) + 2);
+
+		// r g b setting,,,
+		std::uint8_t r(*(*(dst_points_color + i)))\
+			, g(*(*(dst_points_color + i) + 1))\
+			, b(*(*(dst_points_color + i) + 2));
+
+		std::uint32_t rgb = (static_cast<std::uint32_t>(r) << 16 |\
+			static_cast<std::uint32_t>(g) << 8 | static_cast<std::uint32_t>(b));
+		point.rgb = *reinterpret_cast<float*>(&rgb);
+
+		point_cloud.push_back(point);
+
+#if DEBUG
+
+		if (cur_idx == 0) {
+			printf("x, y, z : %lf ,%lf, %lf || r, g, b : %d, %d, %d\n", \
+				point.x, point.y, point.z, point.r, point.g, point.b);
+			cur_idx++;
+		}
+#endif
+	}
+		
+	sprintf_s(num_buf, "%d", cur_data);
+	temp_name = *(objs_names + 3) + num_buf + ".png";
+	memset(num_buf, 0, 56);
+	result_path = dst_path + "\\" + "pc_0.pcd";
+	io::savePCDFileASCII<PointXYZRGB_double>(result_path, point_cloud);
+
+
+	printf("Completed converting 3 images (depth, rgb, mask) to point cloud!!!\n");
+	printf("Result PCD File Path : %s\n", result_path.c_str());  //will use os path 
+	printf("elapsed time : %.2lf s\n", difftime(end, start) / 1000.0);
+
 	
 
 	// img mat deallocation.
