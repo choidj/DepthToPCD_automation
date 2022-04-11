@@ -34,3 +34,4 @@
 # Dataset
 *.png
 *.pcd
+*.exr

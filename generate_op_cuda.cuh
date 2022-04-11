@@ -63,5 +63,5 @@ cudaError_t img_op_kernel_call(double* dst_z, unsigned char* src_depth_img, unsi
 cudaError_t point_op_kernel_call(double** dst_points, unsigned char** dst_point_colors, unsigned char* src_rgb, double* src_z);
 
 void trans_automation_cuda(double** dst_point, unsigned char** dst_point_color, unsigned char** src_images);
-void depth_to_pcd(int img_set_size, string str_path, string dst_path);
+void depth_to_pcd(int img_set_size, string dataset_path);
 

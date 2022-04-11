@@ -10,7 +10,7 @@ int main() {
 	string temp = path_buf;
 
 	string dataset_path = temp + "\\dataset\\";
-	string pcd_path = dataset_path + "pcd_result";
+	string pcd_path = dataset_path + "pointCloud";
 
 	strcpy(dataset_path_, dataset_path.c_str());
 	strcpy(pcd_path_, pcd_path.c_str());
@@ -19,7 +19,8 @@ int main() {
 
 
 	printf("pcd_path, dataset_path : %s, %s\n", pcd_path.c_str(), dataset_path.c_str());
-	depth_to_pcd(1, dataset_path, pcd_path);
+	depth_to_pcd(2000, dataset_path);
+
 
 	return 0;
 }
@@ -27,8 +28,8 @@ int main() {
 
 // dataset format : depth_0.png, depth_1.png ,...,
 // result format : pc_0.png, pc_1.png ,...,
-void depth_to_pcd(int img_set_size, string str_path, string dst_path) {
-	string objs_names[] = { "depth_", "rgb_", "mask_", "pc_"};		// image materials for making PCD.
+void depth_to_pcd(int img_set_size, string dataset_path) {
+	string objs_path[] = { dataset_path + "depth\\", dataset_path + "RGB\\", dataset_path + "mask_all\\", dataset_path + "pointCloud\\" };		// image materials for making PCD.
 	string temp_name;
 	string result_path;
 	char num_buf[56];
@@ -41,6 +42,8 @@ void depth_to_pcd(int img_set_size, string str_path, string dst_path) {
 	clock_t start, end;
 
 	Mat* src_imgs = new Mat[3];
+
+
 	PointCloud <PointXYZRGB_double> point_cloud;
 
 	//pcl::visualization::CloudViewer viewer("Check Cloud Viewer");
@@ -72,17 +75,26 @@ void depth_to_pcd(int img_set_size, string str_path, string dst_path) {
 	}
 	//----------------------------------------------------------------------------------------
 	
-	//pcd generation start.....
+	// pcd generation start.....
 	for (int cur_data = 0; cur_data < img_set_size; cur_data++) {
 		// allocate image Mats and read opencv imread..-------------------------------------------
 		for (int i = 0; i < images_size; i++) {
 			string temp_name;
 			sprintf_s(num_buf, "%d", cur_data);
-			temp_name = *(objs_names + i) + num_buf + ".png";
-			*(src_imgs + i) = imread(str_path + temp_name);
+			if (i == 0) 
+				temp_name = *(objs_path + i) + num_buf + ".exr";
+			else
+				temp_name = *(objs_path + i) + num_buf + ".png";
+			printf("path : %s\n", temp_name.c_str());
+			if (i == 0) {
+				*(src_imgs + i) = imread(temp_name, IMREAD_ANYCOLOR | IMREAD_ANYDEPTH);
+				*(src_imgs + i) *= 255.;
+				(src_imgs + i)->convertTo(*(src_imgs + i), CV_8UC3);
+			}
+			else
+				*(src_imgs + i) = imread(temp_name);
 			memset(num_buf, 0, 56);
 		}
-
 		// opencv Mat convert into usigned char..-------------------------------------------------
 		for (int i = 0; i < images_size; i++) {
 			memcpy(*(images + i), (src_imgs + i)->data, pixel_size * sizeof(unsigned char));
@@ -96,8 +108,12 @@ void depth_to_pcd(int img_set_size, string str_path, string dst_path) {
 				printf("RGB image check....\n");
 			if (j == 2)
 				printf("Mask image check....\n");
-			for (int i = 0; i < 6; i++)
-				printf("image pixel value : %d\n", *(*(images + j) + i));
+			for (int i = 0; i < HEIGHT * WIDTH; i++) {
+				if (j == 0)
+					printf("image pixel value : %d\n", *(*(images + j) + i));
+				else
+					printf("image pixel value : %d\n", *(*(images + j) + i));
+			}
 		}
 #endif	
 		printf("Start converting 3 images (depth, rgb, mask) to point cloud....\n");
@@ -138,11 +154,15 @@ void depth_to_pcd(int img_set_size, string str_path, string dst_path) {
 		}
 		
 		sprintf_s(num_buf, "%d", cur_data);
-		temp_name = *(objs_names + 3) + num_buf + ".png";
+		temp_name = *(objs_path + 3) + num_buf + ".pcd";
 		memset(num_buf, 0, 56);
-		result_path = dst_path + "\\" + "pc_0.pcd";
-		io::savePCDFileASCII<PointXYZRGB_double>(result_path, point_cloud);
+		result_path = temp_name;
 
+		if (!point_cloud.empty()) {
+			io::savePCDFileASCII<PointXYZRGB_double>(result_path, point_cloud); point_cloud.clear();
+		}
+		else
+			printf("Point cloud save error... There isn't point ...\n");
 
 		printf("Completed converting 3 images (depth, rgb, mask) to point cloud!!!\n");
 		printf("Result PCD File Path : %s\n", result_path.c_str());  //will use os path 
