@@ -1,5 +1,5 @@
 #include "generate_op_cuda.cuh"
-
+#define DEPTH_EXRFORM 0
 
 int main() {
 	char path_buf[_MAX_PATH] = { 0, };
@@ -27,7 +27,7 @@ int main() {
 // dataset format : depth_0.png, depth_1.png ,...,
 // result format : pc_0.png, pc_1.png ,...,
 void depth_to_pcd(int img_set_size, string dataset_path) {
-	string objs_path[] = { dataset_path + "depth\\", dataset_path + "RGB\\", dataset_path + "mask_all\\", dataset_path + "pointCloud\\" };		// image materials for making PCD.
+	string objs_path[] = { dataset_path + "depth_template\\", dataset_path + "RGB\\", dataset_path + "mask_all\\", dataset_path + "pointCloud\\" };		// image materials for making PCD.
 	string temp_name;
 	string result_path;
 	char num_buf[56];
@@ -37,7 +37,7 @@ void depth_to_pcd(int img_set_size, string dataset_path) {
 	int pixel_size = HEIGHT * WIDTH * CHANNEL;
 	int images_size = 3;
 
-	clock_t start, end;
+	clock_t cuda_start, cuda_end, gene_pcd_start, gene_pcd_end, total_end, total_start;
 
 	Mat* src_imgs = new Mat[3];
 
@@ -72,18 +72,18 @@ void depth_to_pcd(int img_set_size, string dataset_path) {
 		*(dst_points + i) = *(dst_points + i - 1) + CHANNEL;
 	}
 	//----------------------------------------------------------------------------------------
-	
+	total_start = clock();
 	// pcd generation start.....
 	for (int cur_data = 0; cur_data < img_set_size; cur_data++) {
 		// allocate image Mats and read opencv imread..-------------------------------------------
 		for (int i = 0; i < images_size; i++) {
 			string temp_name;
 			sprintf_s(num_buf, "%d", cur_data);
-			if (i == 0) 
+			if (DEPTH_EXRFORM && i == 0)
 				temp_name = *(objs_path + i) + num_buf + ".exr";
 			else
 				temp_name = *(objs_path + i) + num_buf + ".png";
-			if (i == 0) {
+			if (DEPTH_EXRFORM && i == 0) {
 				*(src_imgs + i) = imread(temp_name, IMREAD_ANYCOLOR | IMREAD_ANYDEPTH);
 				*(src_imgs + i) *= 255.;
 				(src_imgs + i)->convertTo(*(src_imgs + i), CV_8UC3);
@@ -115,11 +115,16 @@ void depth_to_pcd(int img_set_size, string dataset_path) {
 #endif	
 		system("cls");
 		printf("[%4d] Start converting 3 images (depth, rgb, mask) to point cloud....\n", cur_data);
-		start = clock();
+		cuda_start = clock();
 		// automation start...--------------------------------------------------------------------
 		trans_automation_cuda(dst_points, dst_points_color, images);
-		end = clock();
+		cuda_end = clock();
 
+		printf("Generating point cloud......\n");
+		printf("Result PCD File Path : %s\n", result_path.c_str());  //will use os path 
+		printf("Cuda Function elapsed time : %.2lf s\n", difftime(cuda_end, cuda_start) / 1000.0);
+
+		gene_pcd_start = clock();
 		cur_idx = 0;
 		for (int i = 0; i < HEIGHT * WIDTH; i++) {
 			if (*(*(dst_points + i)) == NULL)
@@ -161,12 +166,15 @@ void depth_to_pcd(int img_set_size, string dataset_path) {
 		}
 		else
 			printf("Point cloud save error... There isn't point ...\n");
-
+		gene_pcd_end = clock();
 		printf("Completed converting 3 images (depth, rgb, mask) to point cloud!!!\n");
-		printf("Result PCD File Path : %s\n", result_path.c_str());  //will use os path 
-		printf("elapsed time : %.2lf s\n", difftime(end, start) / 1000.0);
+		printf("PCD file generation elapsed time : %.2lf s\n", difftime(gene_pcd_end, gene_pcd_start) / 1000.0);
 	}
-	
+	total_end = clock();
+
+	printf("Completed converting imgs to point cloud!!!\n");
+	printf("Result PCD File Directory Path : %s\n", (objs_path + 3)->c_str());  //will use os path 
+	printf("Total elapsed time : %.2lf s\n", difftime(total_end, total_start) / 1000.0);
 
 	// img mat deallocation.
 	free(*images); 				free(images);
