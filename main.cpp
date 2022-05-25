@@ -9,7 +9,8 @@ int main() {
 
 	string temp = path_buf;
 
-	string dataset_path = temp + "\\dataset\\";
+	// string dataset_path = temp + "\\dataset\\";
+	string dataset_path = "Y:\\Hologram\\2022-05-24_14-33-13\\";
 	string pcd_path = dataset_path + "pointCloud";
 
 	strcpy(dataset_path_, dataset_path.c_str());
@@ -17,8 +18,11 @@ int main() {
 
 	mkdir(pcd_path_);
 
+	double k_values[] = { -572.4124, 0, 320, 0, -573.5692, 240, 0, 0, 1 };
+	// only 3x3 matrix enable function...
+	mat_inverse_(k_values);
 
-	depth_to_pcd(2000, dataset_path);
+	depth_to_pcd(1000, k_values, dataset_path);
 
 	return 0;
 }
@@ -26,7 +30,7 @@ int main() {
 
 // dataset format : depth_0.png, depth_1.png ,...,
 // result format : pc_0.png, pc_1.png ,...,
-void depth_to_pcd(int img_set_size, string dataset_path) {
+void depth_to_pcd(int img_set_size, double* inverse_k, string dataset_path) {
 	string objs_path[] = { dataset_path + "depth_template\\", dataset_path + "RGB\\", dataset_path + "mask_all\\", dataset_path + "pointCloud\\" };		// image materials for making PCD.
 	string temp_name;
 	string result_path;
@@ -79,11 +83,11 @@ void depth_to_pcd(int img_set_size, string dataset_path) {
 		for (int i = 0; i < images_size; i++) {
 			string temp_name;
 			sprintf_s(num_buf, "%d", cur_data);
-			if (DEPTH_EXRFORM && i == 0)
+			if (DEPTH_EXRFORM && (i == 0))
 				temp_name = *(objs_path + i) + num_buf + ".exr";
 			else
 				temp_name = *(objs_path + i) + num_buf + ".png";
-			if (DEPTH_EXRFORM && i == 0) {
+			if (DEPTH_EXRFORM && (i == 0)) {
 				*(src_imgs + i) = imread(temp_name, IMREAD_ANYCOLOR | IMREAD_ANYDEPTH);
 				*(src_imgs + i) *= 255.;
 				(src_imgs + i)->convertTo(*(src_imgs + i), CV_8UC3);
@@ -117,7 +121,7 @@ void depth_to_pcd(int img_set_size, string dataset_path) {
 		printf("[%4d] Start converting 3 images (depth, rgb, mask) to point cloud....\n", cur_data);
 		cuda_start = clock();
 		// automation start...--------------------------------------------------------------------
-		trans_automation_cuda(dst_points, dst_points_color, images);
+		trans_automation_cuda(dst_points, dst_points_color, inverse_k, images);
 		cuda_end = clock();
 
 		printf("Generating point cloud......\n");
@@ -181,4 +185,22 @@ void depth_to_pcd(int img_set_size, string dataset_path) {
 	free(*dst_points);			free(dst_points);
 	free(*dst_points_color);	free(dst_points_color);
 
+}
+
+void mat_inverse_(double* k_values) {
+	Eigen::MatrixXd k = Eigen::MatrixXd(3, 3);
+
+	for (int i = 0; i < 9; i++) {
+		int row = i / 3;
+		int col = i % 3;
+		k(row, col) = *(k_values + i);
+	}
+
+	Eigen::MatrixXd k_inverse = k.inverse();
+
+	for (int i = 0; i < 9; i++) {
+		int row = i / 3;
+		int col = i % 3;
+		*(k_values + i) = k_inverse(row, col);
+	}
 }

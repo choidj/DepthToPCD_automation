@@ -91,13 +91,7 @@ Error:
     return cudaStatus;
 }
 
-cudaError_t point_op_kernel_call(double** dst_points, unsigned char** dst_point_colors, unsigned char* src_rgb, double* src_z) {
-    // need to add inverse op???
-    double inverse_k[][3] = {
-        {-0.00174699220352319, 0 ,0.559037505127422},
-        {0, -0.00174346879155994, 0.418432509974385},
-        {0, 0, 1}
-    };
+cudaError_t point_op_kernel_call(double** dst_points, unsigned char** dst_point_colors, unsigned char* src_rgb, double* inverse_k, double* src_z) {
     int k_size = 9;
 
     double* dev_inverse_k; double* dev_z; double* dev_points; unsigned char* dev_point_colors; unsigned char* dev_rgb;
@@ -223,7 +217,7 @@ Error:
 
 
 // depth image : *(src), rgb image : *(src + 1), mask image : *(src + 2)
-void trans_automation_cuda(double** dst_point, unsigned char** dst_point_color, unsigned char** src_images) {
+void trans_automation_cuda(double** dst_point, unsigned char** dst_point_color, double* inverse_k, unsigned char** src_images) {
     cudaError_t cudaStatus;
     int pixel_size = HEIGHT * WIDTH * CHANNEL;
     double* z = (double*)malloc(HEIGHT * WIDTH * sizeof(double));
@@ -238,7 +232,7 @@ void trans_automation_cuda(double** dst_point, unsigned char** dst_point_color, 
     cudaStatus = img_op_kernel_call(z, *(src_images), *(src_images + 2));
 
     //point operation kernel call here..
-    cudaStatus = point_op_kernel_call(dst_point, dst_point_color, *(src_images + 1), z);
+    cudaStatus = point_op_kernel_call(dst_point, dst_point_color, *(src_images + 1), inverse_k, z);
 
     free(z);
 }

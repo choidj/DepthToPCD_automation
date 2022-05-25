@@ -11,6 +11,8 @@
 #include <stdlib.h>
 #include <conio.h>
 
+#include <Eigen/Dense>
+
 #include "opencv2/opencv.hpp"
 
 #include "cuda_runtime.h"
@@ -33,6 +35,7 @@
 using namespace std;
 using namespace cv;
 using namespace pcl;
+
 
 #define PCL_ADD_UNION_POINT4D_DOUBLE \
     union EIGEN_ALIGN16 { \
@@ -63,8 +66,9 @@ __global__ void point_op(double* dst_points, unsigned char* dst_point_colors, un
 
 
 cudaError_t img_op_kernel_call(double* dst_z, unsigned char* src_depth_img, unsigned char* scr_mask_img);
-cudaError_t point_op_kernel_call(double** dst_points, unsigned char** dst_point_colors, unsigned char* src_rgb, double* src_z);
+cudaError_t point_op_kernel_call(double** dst_points, unsigned char** dst_point_colors, unsigned char* src_rgb, double* inverse_k, double* src_z);
 
-void trans_automation_cuda(double** dst_point, unsigned char** dst_point_color, unsigned char** src_images);
-void depth_to_pcd(int img_set_size, string dataset_path);
+void mat_inverse_(double* k_values);
+void trans_automation_cuda(double** dst_point, unsigned char** dst_point_color, double* inverse_k, unsigned char** src_images);
+void depth_to_pcd(int img_set_size, double* inverse_k, string dataset_path);
 
