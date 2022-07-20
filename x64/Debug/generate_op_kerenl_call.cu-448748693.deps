@@ -1005,6 +1005,8 @@ C:\Program Files\PCL 1.12.1\3rdParty\Boost\include\boost-1_78\boost\winapi\wait.
 C:\Program Files\PCL 1.12.1\3rdParty\Boost\include\boost-1_78\boost\winapi\wait_constants.hpp
 C:\Program Files\PCL 1.12.1\3rdParty\Eigen\eigen3\Eigen\Cholesky
 C:\Program Files\PCL 1.12.1\3rdParty\Eigen\eigen3\Eigen\Core
+C:\Program Files\PCL 1.12.1\3rdParty\Eigen\eigen3\Eigen\Dense
+C:\Program Files\PCL 1.12.1\3rdParty\Eigen\eigen3\Eigen\Eigenvalues
 C:\Program Files\PCL 1.12.1\3rdParty\Eigen\eigen3\Eigen\Geometry
 C:\Program Files\PCL 1.12.1\3rdParty\Eigen\eigen3\Eigen\Householder
 C:\Program Files\PCL 1.12.1\3rdParty\Eigen\eigen3\Eigen\Jacobi
@@ -1128,6 +1130,17 @@ C:\Program Files\PCL 1.12.1\3rdParty\Eigen\eigen3\Eigen\src\Core\util\XprHelper.
 C:\Program Files\PCL 1.12.1\3rdParty\Eigen\eigen3\Eigen\src\Core\VectorBlock.h
 C:\Program Files\PCL 1.12.1\3rdParty\Eigen\eigen3\Eigen\src\Core\VectorwiseOp.h
 C:\Program Files\PCL 1.12.1\3rdParty\Eigen\eigen3\Eigen\src\Core\Visitor.h
+C:\Program Files\PCL 1.12.1\3rdParty\Eigen\eigen3\Eigen\src\Eigenvalues\ComplexEigenSolver.h
+C:\Program Files\PCL 1.12.1\3rdParty\Eigen\eigen3\Eigen\src\Eigenvalues\ComplexSchur.h
+C:\Program Files\PCL 1.12.1\3rdParty\Eigen\eigen3\Eigen\src\Eigenvalues\EigenSolver.h
+C:\Program Files\PCL 1.12.1\3rdParty\Eigen\eigen3\Eigen\src\Eigenvalues\GeneralizedEigenSolver.h
+C:\Program Files\PCL 1.12.1\3rdParty\Eigen\eigen3\Eigen\src\Eigenvalues\GeneralizedSelfAdjointEigenSolver.h
+C:\Program Files\PCL 1.12.1\3rdParty\Eigen\eigen3\Eigen\src\Eigenvalues\HessenbergDecomposition.h
+C:\Program Files\PCL 1.12.1\3rdParty\Eigen\eigen3\Eigen\src\Eigenvalues\MatrixBaseEigenvalues.h
+C:\Program Files\PCL 1.12.1\3rdParty\Eigen\eigen3\Eigen\src\Eigenvalues\RealQZ.h
+C:\Program Files\PCL 1.12.1\3rdParty\Eigen\eigen3\Eigen\src\Eigenvalues\RealSchur.h
+C:\Program Files\PCL 1.12.1\3rdParty\Eigen\eigen3\Eigen\src\Eigenvalues\SelfAdjointEigenSolver.h
+C:\Program Files\PCL 1.12.1\3rdParty\Eigen\eigen3\Eigen\src\Eigenvalues\Tridiagonalization.h
 C:\Program Files\PCL 1.12.1\3rdParty\Eigen\eigen3\Eigen\src\Geometry\AlignedBox.h
 C:\Program Files\PCL 1.12.1\3rdParty\Eigen\eigen3\Eigen\src\Geometry\AngleAxis.h
 C:\Program Files\PCL 1.12.1\3rdParty\Eigen\eigen3\Eigen\src\Geometry\EulerAngles.h

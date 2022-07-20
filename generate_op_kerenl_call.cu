@@ -5,7 +5,7 @@
 cudaError_t img_op_kernel_call(double* dst_z, unsigned char* src_depth_img, unsigned char* src_mask_img) {
     double* dev_z; unsigned char* dev_depth_img; unsigned char* dev_mask_img;
 
-    double far_ = 5; double near_ = 0.3; float mask_threshold = 10;
+    double far_ = 10; double near_ = 0.3; float mask_threshold = 10;
 
     int size = HEIGHT * WIDTH;
 

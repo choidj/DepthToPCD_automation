@@ -10,7 +10,7 @@ int main() {
 	string temp = path_buf;
 
 	// string dataset_path = temp + "\\dataset\\";
-	string dataset_path = "Y:\\Hologram\\2022-05-24_14-33-13\\";
+	string dataset_path = "Y:\\Hologram\\2022-05-31_19-42-59\\";
 	string pcd_path = dataset_path + "pointCloud";
 
 	strcpy(dataset_path_, dataset_path.c_str());
